@@ -1,0 +1,76 @@
+---
+title: "Hahow_R_HW1"
+author: "Yi-Chuan, Tsai"
+date: "2021-07-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+```
+
+## 第 2 章，作業 1 - Ch 1 - R 語言基礎 - 基本的資料操作
+
+本次作業的目標是：綜合使用使用者自訂函數、流程控制、迴圈控制等方法，進行 R 語言統計分析。\
+請大家試著綜合上述所學，練習進行 iris 資料集合的統計分析：
+
+### 1. 試圖撰寫函數 SummarizeData(data.frame)： 
++ 輸入：名為 data.frame 的資料框架，該函數將計算計算 data.frame 的統計量 0 
++ 輸出：名為 `output` 的資料框架，`output`  columns 的值依序為 `data.frame` 每個 column 的平均數（`mean`）、變異數（`var`）、最大值（`max`）、最小值（`min`），每個 row 是 `data.frame` 的一個 column 
+利用這個函數，計算 iris 資料集合前四個 columns 的各項統計量。
+
+
+```{r, echo=TRUE}
+# check the data at the beginning
+glimpse(iris)
+```
+
+
+```{r}
+
+#create summary function
+summarize_data <- function(x) {
+    
+    summary_df <- data.frame(data_mean = mean(x, na.rm=TRUE),
+                             data_var=var(x, na.rm=TRUE),
+                             data_max=max(x, na.rm=TRUE),
+                             data_min = min(x, na.rm=TRUE))
+    
+    return(summary_df)
+}
+
+
+#build a empty vector 
+output <- c()
+
+#Combined the results into data.frame
+for (i in 1:4) {
+    output <- rbind(output,summarize_data(iris[,i]))
+}
+
+#Add the row name as iris colname to indicate row data
+rownames(output) <- colnames(iris[1:4])
+output
+```
+
+### Including Plots
+
+定義第 i 朵花與第 j 朵花的差異程度為兩朵花資料的歐式距離 (Euclidean distance)，其中 xik 代表第 i 朵花在 iris資料集合中第 k 個變數的數值。試著用 for 迴圈建立一個 150 x 150 的矩陣 A，其中 Aij=d(i,j)。
+
+
+```{r flower_dist}
+flower_dist <- matrix(0, nrow=150, ncol=150)
+
+for(i in 1:150) {
+    for (j in 1:150){
+        for (k in 1:4) {
+            
+            flower_dist[i,j] <- flower_dist[i,j] + sqrt(sum((iris[i,k] - iris[j,k]) ^ 2))
+        }
+         
+    }
+}
+
+head(flower_dist,1)
+```
