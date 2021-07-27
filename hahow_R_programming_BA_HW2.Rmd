@@ -2,7 +2,7 @@
 title: "hahow_R_programming_BA_HW2"
 author: "Yi-Chuan, Tsai"
 date: "7/27/2021"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
