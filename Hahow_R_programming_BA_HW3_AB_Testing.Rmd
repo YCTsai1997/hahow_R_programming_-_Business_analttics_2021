@@ -1,0 +1,134 @@
+---
+title: "hahow_R_programming_BA_HW3_AB_Testing"
+author: "Yi-Chuan, Tsai"
+date: "9/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("~/My files/001_Programming Related/R")
+
+# Required libarary
+library(tidyverse)
+library(knitr)
+
+```
+
+## A/B 測試概念與個案實作練習
+
+在這個章節的作業中，我們同樣利用「使用者購買行為」的資料集分析實驗設計的結果，了解影響消費者購買金額的重要變因，並探究哪個因素最能夠影響實驗結果。請使用uset_table.csv 與 test_table.csv 兩組資料集合(可於上一單元下載)，依照以下題目及步驟完成此次作業：
+
+```{r file_import}
+test_table <- read_csv("L6_Dataset/test_table.csv")
+user_table <- read_csv("L6_Dataset/user_table.csv")
+```
+
+## EDA:Clean and check the data before analysis
+
+* Check table structure and view the data columns(test table):
+
+```{r test_table}
+str(test_table)
+kable(test_table[1:5,])
+```
+
+* Check table structure and view the data columns(User table):
+```{r user_table}
+str(user_table)
+kable(user_table[1:5,])
+```
+
+* Get the distinct count of users and check the overlap
+```{r check the amount}
+print(paste("Number of users in test table: ", length(unique(test_table$user_id))))
+print(paste("Number of users in user table: ", nrow(distinct(user_table, user_id))))
+```
+
+* If you select column and join then will have data tble issue 
+```{r combine two tables to get the final table}
+print(paste('Number of users in both tables:', nrow(distinct(
+    inner_join(select(test_table, user_id), select(user_table, user_id), by = 'user_id')
+))))
+
+all_table <- left_join(test_table, user_table, by = 'user_id')
+head(all_table)
+```
+
+* Fix datatype
+```{r dtype}
+all_table$date <- as.Date(all_table$date, format='%Y/%m/%d')
+
+for(i in c(3, 4, 6, 7,9)){
+    all_table[, i] <- as.factor(all_table[[i]]) 
+}
+
+str(all_table)
+```
+
+
+## Question 1: 
+
+篩選出屬於日本市場的使用者，針對購買金額進行獨立樣本 t 檢定。請問：實驗組的購買金額有沒有顯著高於對照組的購買金額？
+反之，針對購買金額進行獨立樣本 t 檢定，對照組金額有沒有顯著高於實驗組金額？
+請利用 ggplot2 繪製實驗組與對照組購買金額機率密度圖 (density plot)。
+
+```{r Subseting JP users}
+jp_users <- all_table %>%
+    filter(country =='JP')
+
+print(head(jp_users))
+```
+
+* T -test for significance level :  p-value = 1
+```{r t-test}
+t.test(jp_users[jp_users$test==1,]$purchase_amount,
+       jp_users[jp_users$test==0,]$purchase_amount,
+       alternative = 'greater')
+```
+
+* ggplot for purchase amount density plot 
+```{r ggplot -density plot}
+ggplot(jp_users, aes(purchase_amount, fill = test)) +
+    geom_density(alpha = 0.3) +
+    ggtitle("JP Density Plot of Purchase Amount - Test versus control:") +
+    theme_bw()
+```
+
+
+## Question 2: 
+
+建立購物金額與是否為實驗組、設備、性別與服務的變異數分析(ANOVA)模型。請問，模型中有哪些因子是顯著的？
+- 請利用 ggplot2 繪製購買金額對應不同服務的盒狀圖 (boxplot)。
+- 請進行 Tukey 事後檢定，了解 test 對於購買金額的影響，並繪製信賴區間圖形。
+- 請進行 Tukey 事後檢定，了解 device 對於購買金額的影響，並繪製信賴區間圖形。
+
+- Based on the result, test, device and service are sinigicant factors
+```{r aov}
+aov_model <- aov(
+    purchase_amount ~ test + device + gender + service, all_table
+)
+
+summary(aov_model)
+```
+
+- ggplot: service type 
+```{r ggplot - service}
+ggplot(all_table, aes(x = service, y= purchase_amount)) +
+    geom_boxplot() +
+    theme_bw()
+```
+
+- Tukey 事後檢定，了解 test 對於購買金額的影響，並繪製信賴區間圖形。
+```{r TukeyHSD - test}
+TukeyHSD(aov_model, 'test')
+plot(TukeyHSD(aov_model,'test'))
+```
+
+- Tukey 事後檢定，了解 device 對於購買金額的影響，並繪製信賴區間圖形。
+```{r TukeyHSD - device}
+TukeyHSD(aov_model, 'device')
+plot(TukeyHSD(aov_model,'device'))
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
